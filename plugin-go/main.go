@@ -297,7 +297,7 @@ func pluginRegistration() registration {
 			Name:             pluginIdentifier,
 			Version:          "0.1.0",
 			Author:           "TwitterIsGood",
-			GitHubRepository: "https://github.com/TwitterIsGood/CLIProxyAPI",
+			GitHubRepository: "https://github.com/TwitterIsGood/cpa-continue-thinking",
 			ConfigFields: []pluginapi.ConfigField{
 				{Name: "enabled", Type: pluginapi.ConfigFieldTypeBoolean, Description: "When false, the router declines all requests and CPA uses its native Codex path."},
 				{Name: "fail-open", Type: pluginapi.ConfigFieldTypeBoolean, Description: "When true, continue-specific failures emit the current completed event instead of failing the stream."},

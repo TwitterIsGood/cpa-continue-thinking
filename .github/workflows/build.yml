@@ -10,6 +10,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  PLUGIN_ID: codex-continue-thinking
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -18,11 +21,9 @@ jobs:
         working-directory: plugin-go
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
-
       - name: Run tests
         run: go test ./...
 
@@ -34,19 +35,17 @@ jobs:
       run:
         working-directory: plugin-go
     strategy:
+      fail-fast: false
       matrix:
         target:
           - os: linux
             arch: amd64
             cc_target: x86_64-linux-gnu
-            artifact: codex-continue-thinking-linux-amd64.so
           - os: linux
             arch: arm64
             cc_target: aarch64-linux-gnu
-            artifact: codex-continue-thinking-linux-arm64.so
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26'
@@ -57,16 +56,33 @@ jobs:
             | tar xJ -C /tmp
           echo "/tmp/zig-linux-x86_64-0.13.0" >> $GITHUB_PATH
 
-      - name: Build ${{ matrix.target.artifact }}
+      - name: Resolve version
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "ARCHIVE_NAME=${PLUGIN_ID}_${VERSION}_${{ matrix.target.os }}_${{ matrix.target.arch }}.zip" >> $GITHUB_ENV
+
+      - name: Build shared library
+        run: |
+          mkdir -p "${{ runner.temp }}/build"
           CGO_ENABLED=1 GOOS=${{ matrix.target.os }} GOARCH=${{ matrix.target.arch }} \
             CC="zig cc -target ${{ matrix.target.cc_target }}" \
-            go build -buildmode=c-shared -o /tmp/${{ matrix.target.artifact }} .
+            go build -buildmode=c-shared \
+            -o "${{ runner.temp }}/build/${PLUGIN_ID}.so" .
+          rm -f "${{ runner.temp }}/build/${PLUGIN_ID}.h"
+
+      - name: Package plugin
+        run: |
+          zip -j "${ARCHIVE_NAME}" "${{ runner.temp }}/build/${PLUGIN_ID}.so"
+          sha256sum "${ARCHIVE_NAME}" > "${ARCHIVE_NAME}.sha256"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target.artifact }}
-          path: /tmp/${{ matrix.target.artifact }}
+          name: ${{ env.ARCHIVE_NAME }}
+          path: |
+            plugin-go/${{ env.ARCHIVE_NAME }}
+            plugin-go/${{ env.ARCHIVE_NAME }}.sha256
+          if-no-files-found: error
 
   release:
     needs: build
@@ -74,20 +90,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/download-artifact@v4
         with:
-          pattern: codex-continue-thinking-*
           merge-multiple: true
-          path: /tmp/artifacts
+          path: dist
+
+      - name: Prepare checksums
+        run: |
+          sort dist/*.sha256 > dist/checksums.txt
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            /tmp/artifacts/codex-continue-thinking-linux-amd64.so
-            /tmp/artifacts/codex-continue-thinking-linux-arm64.so
-          generate_release_notes: true
-          # Remove draft: false to publish immediately when tag is pushed
-          draft: false
-          prerelease: false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" dist/*.zip dist/checksums.txt --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" dist/*.zip dist/checksums.txt \
+              --verify-tag \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi
