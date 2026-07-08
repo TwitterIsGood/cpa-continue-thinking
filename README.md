@@ -84,6 +84,12 @@ The plugin exposes an in-memory aggregate metrics dashboard:
 
 The dashboard shows request counts, continue rates, stop reasons, reasoning token distribution, and rolling 24-hour buckets. No prompts, responses, API keys, accounts, or auth identifiers are collected.
 
+## Community
+
+Friendly link: [LINUX DO](https://linux.do/) — a Chinese developer community.
+
+This plugin was inspired by the community discussion and solution notes around Codex continue-thinking: [解决 Codex 516 的截断降智](https://linux.do/t/topic/2504036?u=ricksanchezzz12301).
+
 ## License
 
 MIT

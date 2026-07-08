@@ -84,6 +84,12 @@ plugins:
 
 面板展示请求计数、继续率、停止原因、推理 token 分布以及滚动 24 小时数据桶。不收集任何提示词、响应、API 密钥、账号或认证标识。
 
+## 社区友链
+
+友链：[LINUX DO](https://linux.do/) — 中文开发者社区。
+
+本插件的解决方案来源于 LINUX DO 社区关于 Codex 继续思考/截断降智的讨论：[解决 Codex 516 的截断降智](https://linux.do/t/topic/2504036?u=ricksanchezzz12301)。
+
 ## 许可
 
 MIT
