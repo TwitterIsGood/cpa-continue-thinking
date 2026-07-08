@@ -1,5 +1,7 @@
 # cpa-continue-thinking
 
+[中文文档](./README_CN.md)
+
 CLIProxyAPI (CPA) plugin that adds Codex "continue-thinking" support. When a Codex response's `reasoning_tokens` matches the truncation formula `518*n - 2`, the plugin appends the reasoning output and hidden commentary, deletes `previous_response_id`, and re-requests Codex — folding multiple upstream rounds into a single downstream stream.
 
 Supports all downstream protocols: OpenAI Responses, OpenAI Chat Completions, Claude Messages, Gemini, Interactions, and native Codex.
